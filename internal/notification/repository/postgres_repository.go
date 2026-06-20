@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"log"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/soorajsomans/notification-service/internal/notification/model"
@@ -146,7 +148,15 @@ func (r *PostgresRepository) ClaimPendingNotifications(
 	WITH claimed AS(
 		SELECT id
 		FROM notifications
-		WHERE status = 'PENDING'
+		WHERE 
+		(
+			status = 'PENDING'
+		)
+		OR
+		(
+			status = 'RETRY'
+			AND next_retry_at <= NOW()
+		)
 		ORDER BY created_at
 		FOR UPDATE SKIP LOCKED
 		LIMIT $1
@@ -164,7 +174,9 @@ func (r *PostgresRepository) ClaimPendingNotifications(
 		n.message,
 		n.status,
 		n.created_at,
-		n.updated_at
+		n.updated_at,
+		n.retry_count,
+		n.next_retry_at
 	`
 
 	var notifications []model.Notification
@@ -180,6 +192,34 @@ func (r *PostgresRepository) ClaimPendingNotifications(
 		return nil, err
 	}
 	return notifications, nil
+}
+
+func (r *PostgresRepository) MarkForRetry(
+	ctx context.Context,
+	id string,
+	retryCount int,
+	nextRetryAt time.Time,
+) error {
+	query := `
+	UPDATE notifications
+	SET
+		status = 'RETRY',
+		retry_count = $1,
+		next_retry_at = $2,
+		updated_at = NOW()
+	WHERE id = $3
+	`
+
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		retryCount,
+		nextRetryAt,
+		id,
+	)
+	rows, _ := result.RowsAffected()
+	log.Printf("rows updated = %d", rows)
+	return err
 }
 
 var _ NotificationRepository = (*PostgresRepository)(nil)

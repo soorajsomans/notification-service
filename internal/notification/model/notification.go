@@ -9,6 +9,7 @@ const (
 	Processing NotificationStatus = "PROCESSING"
 	Sent       NotificationStatus = "SENT"
 	Failed     NotificationStatus = "FAILED"
+	Retry      NotificationStatus = "RETRY"
 )
 
 type Channel string
@@ -30,4 +31,7 @@ type Notification struct {
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+
+	RetryCount  int        `db:"retry_count"`
+	NextRetryAt *time.Time `db:"next_retry_at"`
 }

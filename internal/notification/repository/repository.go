@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/soorajsomans/notification-service/internal/notification/model"
 )
@@ -32,4 +33,11 @@ type NotificationRepository interface {
 		ctx context.Context,
 		limit int,
 	) ([]model.Notification, error)
+
+	MarkForRetry(
+		ctx context.Context,
+		id string,
+		retryCount int,
+		nextRetryAt time.Time,
+	) error
 }

@@ -27,3 +27,7 @@ ADD COLUMN retry_count INT NOT NULL DEFAULT 0;
 
 ALTER TABLE notifications
 ADD COLUMN next_retry_at TIMESTAMP NULL;
+
+ALTER TABLE notifications
+ALTER COLUMN next_retry_at
+TYPE TIMESTAMPTZ;
